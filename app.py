@@ -8,7 +8,7 @@ app = Flask(__name__)
 @app.route('/crawlingBaiduData/<word>')
 def hello_world(word):  # put application's code here
     # 爬取数据逻辑
-
+    crawlingData.getData(word)
     return '爬取数据:%s'%(word)
 
 

@@ -4,7 +4,7 @@
 # @File : dataHandle.py
 # @Software : PyCharm
 
-from sqlalchemy import create_engine, Column, Integer, String, DateTime
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, func
 from sqlalchemy.orm import sessionmaker, declarative_base
 from datetime import datetime
 import logging
@@ -59,7 +59,37 @@ def save_webpage_to_db(data):
         session.close()
 
 
-def queryBaike(word):
+def queryBaike(word, page, pageSize):
+    session = Session()
+    try:
+        offset = (page - 1) * pageSize  # 计算偏移量
+        # 查询总条数
+        total_count = session.query(func.count(BaiduSearch.id)).filter(
+            BaiduSearch.search_word.like('%{}%'.format(word))).scalar()
+        baikeData = session.query(BaiduSearch).filter(BaiduSearch.search_word.like('%{}%'.format(word))) \
+            .limit(pageSize).offset(offset).all()
+        results = []
+        for data in baikeData:
+            result = {
+                'id': data.id,
+                'page_number': data.page_number,
+                'keyword': data.keyword,
+                'search_word': data.search_word,
+                'title': data.title,
+                'current_url': data.current_url,
+                'parent_url': data.parent_url,
+                'text_html': data.text_html,
+                'create_time': str(data.create_time)
+            }
+            results.append(result)
+        return {'total_count': total_count, 'results': results}
+    except Exception as e:
+        logger.error(e)
+    finally:
+        session.close()
+
+
+def queryAllBaike(word):
     session = Session()
     try:
         baikeData = session.query(BaiduSearch).filter(BaiduSearch.search_word.like('%{}%'.format(word))).all()
@@ -85,7 +115,7 @@ def queryBaike(word):
 
 
 def freqCount(word):
-    results = queryBaike(word)
+    results = queryAllBaike(word)
     titleStr = ''
     for data in results:
         title = data.get('title')
@@ -106,4 +136,4 @@ def freqCount(word):
 
 
 if __name__ == "__main__":
-    freqCount("python")
+    queryBaike('', 1, 10)

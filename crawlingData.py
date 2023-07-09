@@ -37,13 +37,14 @@ def askUrl(url):
         "Upgrade-Insecure-Requests": '1'
     }
 
-    session = requests.Session()
-    session.headers.update(head)
-
     # 发送初始请求，提取重定向链接
-    response = session.get(url, allow_redirects=True)
-    redirect_url = response.url
-    print("重定向后的URL:", redirect_url)
+    # session = requests.Session()
+    # session.headers.update(head)
+    # response = session.get(url, allow_redirects=True)
+    # redirect_url = response.url
+    # print("重定向后的URL:", redirect_url)
+
+    response = requests.get(url, headers=head)
 
     # if redirect_url:
     #     # 设置重定向链接为Session的基础URL
@@ -60,10 +61,11 @@ def askUrl(url):
 def crawl_baidu_baike(word, max_pages):
     visited_urls = set()
     keyword = word
-    queue = [(1, keyword, '')]  # (网页编号, 当前关键词, 父链接)
+    page_number = 0
+    queue = [(keyword, '')]  # (网页编号, 当前关键词, 父链接)
 
     while len(visited_urls) < max_pages and queue:
-        page_number, keyword, parent_url = queue.pop(0)
+        keyword, parent_url = queue.pop(0)
         url = baseUrl + keyword
 
         if url in visited_urls:
@@ -74,6 +76,7 @@ def crawl_baidu_baike(word, max_pages):
         # response.encoding = 'utf-8'
 
         if response.status_code == 200:
+            page_number += 1
             originalHtml = response.text
             # originalHtml = response.text
             soup = BeautifulSoup(originalHtml, 'html.parser')
@@ -97,34 +100,34 @@ def crawl_baidu_baike(word, max_pages):
 
             # 保存网页数据到数据库
             dataHandle.save_webpage_to_db(data)
-            fileName = 'baikeDetail/' + word.split('/')[0] + '_' + str(page_number) + '_json.txt'
-            fileData = {
-                'page_number': page_number,
-                'title': title,
-                'current_url': url,
-                'parent_url': parent_url,
-                'original_html': originalHtml,
-                'text_html': contentText
-            }
-            fileJsonData = json.dumps(fileData, indent=4, ensure_ascii=False)
             # 写文件
-            with codecs.open(fileName, "w", encoding="utf-8") as file:
-                file.write(fileJsonData)
+            # fileName = 'baikeDetail/' + word.split('/')[0] + '_' + str(page_number) + '_json.txt'
+            # fileData = {
+            #     'page_number': page_number,
+            #     'title': title,
+            #     'current_url': url,
+            #     'parent_url': parent_url,
+            #     'original_html': originalHtml,
+            #     'text_html': contentText
+            # }
+            # fileJsonData = json.dumps(fileData, indent=4, ensure_ascii=False)
+            # # 写文件
+            # with codecs.open(fileName, "w", encoding="utf-8") as file:
+            #     file.write(fileJsonData)
             # 输出当前处理的网页信息
             print(f'Crawled page {page_number}: {url}')
 
             # 提取该网页中的关联词条，并加入待爬取队列
             links = soup.find_all('a', href=True)
-            queueNum = page_number
+            # queueNum = page_number
             for link in links:
                 href = link['href']
                 if href.startswith('/item/'):
                     next_keyword = href[6:]
-                    queueNum += 1
-                    queue.append((queueNum, next_keyword, url))
+                    queue.append((next_keyword, url))
         else:
             print(f'Failed to crawl page {page_number}: {url}')
 
 
 if __name__ == "__main__":
-    crawl_baidu_baike("python/407313", 500)
+    crawl_baidu_baike("宇宙大爆炸/9714750", 500)

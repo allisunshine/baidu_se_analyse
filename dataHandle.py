@@ -10,6 +10,7 @@ from datetime import datetime
 import logging
 import jieba
 from collections import Counter
+import string
 
 # 创建日志记录器
 logger = logging.getLogger(__name__)
@@ -125,12 +126,11 @@ def freqCount(word):
     logger.info("titleStr:{}", titleStr)
     words = jieba.cut(titleStr)
     # 自定义停用词列表
-    stop_words = [' ', '（', '）', '、', '的', '·', '百度', '百科', '：']
-    # 去除标点符号
-    words = [word for word in words if word not in stop_words]
+    stop_words = [' ', '（', '）', '、', '的', '·', '百度', '百科', '：', '秒', '懂', '年', '中', '人', '与']
+    words = [word for word in words if word not in stop_words and word not in string.punctuation]
     # 统计词频并取出前十个词
     word_count = Counter(words)
-    top_ten_words = word_count.most_common(30)
+    top_ten_words = word_count.most_common(20)
     result_list = [{'word': word, 'count': count} for word, count in top_ten_words]
     return result_list
 
